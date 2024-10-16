@@ -5,6 +5,7 @@
 # Updated : 13/12/2023
 # Version : v3
 #
+# Variant written by Jason Adle
 #########################################################################################
 # Description:
 #		Script to gather device information and display it to the end user.
@@ -54,13 +55,13 @@ DialogInstall(){
 
 if ! command -v dialog &> /dev/null
 then
-	echo "SwiftDialog is not installed. App will be installed now....."
+	echo "swiftDialog is not installed. Installing now....."
 	sleep 2
 	
 	DialogInstall
 	
 else
-	echo "SwiftDialog is installed. Checking installed version....."
+	echo "swiftDialog is installed. Checking installed version....."
 	
 	installedVersion=$(dialog -v | sed 's/./ /6' | awk '{print $1}')
 	
@@ -126,20 +127,21 @@ networkhardware=$(while read -r line; do
 	fi
 done <<< "$(networksetup -listnetworkserviceorder | grep 'Hardware Port')")
 
-jamfcheck=$(
-if [[ -f /usr/local/jamf/bin/jamf ]]
-then
-	echo "JAMF Installed and Running"
-	else
-	echo "JAMF Not installed"
-fi
-)
+#  jamfcheck=$(
+#  if [[ -f /usr/local/jamf/bin/jamf ]]
+# # then
+# # 	echo "JAMF Installed and Running"
+# # 	else
+# # 	echo "JAMF Not installed"
+# # fi
+# # )
 
-mdmprofile=$(mdm=$(sudo profiles list | grep 'com.jamfsoftware.tcc.management' | awk '{print $4}' | sed -e 's#com.##' -e 's#.tcc.management##')
+#modified from original script for Mosyle
+mdmprofile=$(mdm=$(sudo profiles list | grep 'com.mosyle.mdm' | awk '{print $4}' | sed -e 's#com.##' -e 's#.mdm##')
 
-if [[ $mdm == jamfsoftware ]]
+if [[ $mdm == mosyle ]]
 then
-	echo "JAMF MDM Installed"
+	echo "Mosyle MDM installed"
 	else
 	echo "No MDM profile found"
 fi)
@@ -149,10 +151,10 @@ FVSTATUS=$(FV=$(sudo fdesetup list | grep $username)
 if [[ $FV == "" ]]; then
 	echo "FileVault not enabled"
 	if fdesetup status | grep On ; then
-		echo "FV Enabled but not for current User"
+		echo "FileVault Enabled but not for current User"
 	fi
 else
-	echo "FV Enabled"
+	echo "FileVault enabled"
 fi)
 
 OS=$(sw_vers -productVersion)
@@ -178,14 +180,14 @@ BANNER=$(ls /System/Library/Desktop\ Pictures/$OSNAME*.heic)
 cat << EOF > /tmp/dialogjson.json
 {
 	"listitem" : [
-		{"title" : "Device Name:", "icon" : "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/HomeFolderIcon.icns", "statustext" : "$localname"},
-		{"title" : "User Logged in:", "icon" : "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/UserIcon.icns", "statustext" : "$username"},
-		{"title" : "Current Network:", "icon" : "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/GenericNetworkIcon.icns", "statustext" : "$networkname"},
-		{"title" : "ActiveConnection:", "icon" : "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/AirDrop.icns", "statustext" : "$networkhardware"},
+		{"title" : "Device name:", "icon" : "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/HomeFolderIcon.icns", "statustext" : "$localname"},
+		{"title" : "Current user:", "icon" : "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/UserIcon.icns", "statustext" : "$username"},
+		{"title" : "Current network:", "icon" : "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/GenericNetworkIcon.icns", "statustext" : "$networkname"},
+		{"title" : "Active Connection:", "icon" : "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/AirDrop.icns", "statustext" : "$networkhardware"},
 		{"title" : "Current IP:", "icon" : "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/ExecutableBinaryIcon.icns", "statustext" : "$ipadd"},
-		{"title" : "FV Status:", "icon" : "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/FileVaultIcon.icns", "statustext" : "$FVSTATUS"},
+		{"title" : "FileVault status:", "icon" : "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/FileVaultIcon.icns", "statustext" : "$FVSTATUS"},
 		{"title" : "Free Disk Space:", "icon" : "https://ics.services.jamfcloud.com/icon/hash_522d1d726357cda2b122810601899663e468a065db3d66046778ceecb6e81c2b", "statustext" : "$FREESPACE"},
-		{"title" : "MDM Status:", "icon" : "https://resources.jamf.com/images/logos/Jamf-Icon-color.png", "statustext" : "$mdmprofile"}
+		{"title" : "MDM status:", "icon" : "https://pub-28e8a4eec20f49c5bfa68501ae8ae4b9.r2.dev/appicons/mosyle-self.png", "statustext" : "$mdmprofile"},
 	]
 }
 EOF
@@ -216,7 +218,7 @@ dialog \
 --message none \
 --icon "$DeviceIcon" \
 --jsonfile /tmp/dialogjson.json \
---messagefont 'name=Arial,size=14' \
+--messagefont 'name=Helvetica,size=14' \
 --height 590 \
 --width 700 \
 --infobox "Model:<br>**$model**\n\nSerial Number:<br>**$serial**\n\nOS Version:<br>**$OSNAME $OS**\n\nProcessor:<br>**$CHIP**\n\nMemory:<br>**$RAM**"
